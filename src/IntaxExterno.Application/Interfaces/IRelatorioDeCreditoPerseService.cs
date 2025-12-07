@@ -11,6 +11,6 @@ public interface IRelatorioDeCreditoPerseService
     Task<Response<RelatorioDeCreditoPerseGetDetailsDto?>> GetByIdAsync(int id);
     Task<Response<RelatorioDeCreditoPersePutDto>> UpdateAsync(RelatorioDeCreditoPersePutDto relatorioDeCreditoPersePutDto, string updatedById);
     Task<Response<bool>> DeleteAsync(int id, int relatorioDeCreditoPerseId, string deletedById);
-    Task<Response<RelatorioImportResultDto>> ImportFromExcelAsync(IFormFile file, string createdById);
+    Task<Response<RelatorioImportResultDto>> ImportFromExcelAsync(IFormFile file, string createdById, DateTime dataEmissao);
     Task<Response<byte[]>> ExportToExcelAsync(int id);
 }

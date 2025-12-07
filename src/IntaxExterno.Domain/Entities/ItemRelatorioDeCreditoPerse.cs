@@ -8,8 +8,7 @@ namespace IntaxExterno.Domain.Entities;
 public class ItemRelatorioDeCreditoPerse : BaseEntity
 {
     public string TipoTributo { get; set; } = string.Empty; // IRPJ, CSLL, PIS, COFINS
-    public int MesPeriodo { get; set; } // 1 a 12
-    public int AnoPeriodo { get; set; } // Ex: 2022
+    public DateTime DataEmissao { get; set; }
 
     public int? NumPedido { get; set; }
 

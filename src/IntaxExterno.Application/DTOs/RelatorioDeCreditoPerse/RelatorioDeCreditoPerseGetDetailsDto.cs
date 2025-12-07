@@ -8,7 +8,7 @@ public class RelatorioDeCreditoPerseGetDetailsDto
     public string UID { get; set; } = string.Empty;
     public int ClienteId { get; set; }
     public ClienteGetDto Cliente { get; set; } = default!;
-    public int AnoPeriodo { get; set; }
+    public DateTime DataEmissao { get; set; }
     public decimal TotalIRPJ { get; set; }
     public decimal TotalCSLL { get; set; }
     public decimal TotalPIS { get; set; }

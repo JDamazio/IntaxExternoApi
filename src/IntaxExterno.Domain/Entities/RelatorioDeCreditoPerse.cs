@@ -7,7 +7,7 @@ namespace IntaxExterno.Domain.Entities;
 
 public class RelatorioDeCreditoPerse : BaseEntity
 {
-    public int AnoPeriodo { get; set; }
+    public DateTime DataEmissao { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalIRPJ { get; set; }

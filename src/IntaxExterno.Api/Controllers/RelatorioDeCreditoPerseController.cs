@@ -83,7 +83,7 @@ public class RelatorioDeCreditoPerseController : ControllerBase
     }
 
     [HttpPost("import")]
-    public async Task<ActionResult> ImportFromExcel(IFormFile file)
+    public async Task<ActionResult> ImportFromExcel(IFormFile file, [FromQuery] DateTime dataEmissao)
     {
         string createdById = JwtHelper.GetUserIdFromToken(_token);
 
@@ -92,7 +92,7 @@ public class RelatorioDeCreditoPerseController : ControllerBase
             return BadRequest("Arquivo não fornecido");
         }
 
-        var response = await _relatorioDeCreditoPerseService.ImportFromExcelAsync(file, createdById);
+        var response = await _relatorioDeCreditoPerseService.ImportFromExcelAsync(file, createdById, dataEmissao);
 
         if (!response.Success)
         {

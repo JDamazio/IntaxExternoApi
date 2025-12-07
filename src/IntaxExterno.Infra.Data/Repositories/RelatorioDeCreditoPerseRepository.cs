@@ -41,12 +41,15 @@ public class RelatorioDeCreditoPerseRepository : IRelatorioDeCreditoPerseReposit
 
     public async Task<RelatorioDeCreditoPerse?> UpdateAsync(RelatorioDeCreditoPerse relatorioDeCreditoPerse, string updatedById)
     {
-        var existingRelatorio = await _context.RelatoriosDeCreditoPerse.FindAsync(relatorioDeCreditoPerse.Id);
+        var existingRelatorio = await _context.RelatoriosDeCreditoPerse
+            .Include(r => r.Cliente)
+            .FirstOrDefaultAsync(r => r.Id == relatorioDeCreditoPerse.Id);
+
         if (existingRelatorio == null)
             return null;
 
         // Atualizar apenas os campos específicos da entidade
-        existingRelatorio.AnoPeriodo = relatorioDeCreditoPerse.AnoPeriodo;
+        existingRelatorio.DataEmissao = relatorioDeCreditoPerse.DataEmissao;
         existingRelatorio.TotalIRPJ = relatorioDeCreditoPerse.TotalIRPJ;
         existingRelatorio.TotalCSLL = relatorioDeCreditoPerse.TotalCSLL;
         existingRelatorio.TotalPIS = relatorioDeCreditoPerse.TotalPIS;
@@ -59,6 +62,14 @@ public class RelatorioDeCreditoPerseRepository : IRelatorioDeCreditoPerseReposit
         existingRelatorio.Update(updatedById);
 
         await _context.SaveChangesAsync();
+
+        // Recarregar os itens atualizados
+        await _context.Entry(existingRelatorio)
+            .Collection(r => r.Itens)
+            .Query()
+            .Where(i => i.IsActive)
+            .LoadAsync();
+
         return existingRelatorio;
     }
 

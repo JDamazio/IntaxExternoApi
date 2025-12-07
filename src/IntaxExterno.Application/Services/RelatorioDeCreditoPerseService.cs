@@ -80,18 +80,47 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
         }
 
         // Atualizar registros na tabela ItemRelatorioDeCreditoPerse
-        // Primeiro remove os antigos (soft delete)
-        await _itemRepository.DeleteByRelatorioIdAsync(updatedRelatorio.Id, updatedById);
+        var existingItens = await _itemRepository.GetByRelatorioIdAsync(updatedRelatorio.Id);
+        var existingItensIds = existingItens.Select(i => i.Id).ToList();
 
-        // Depois cria os novos
         if (relatorioDeCreditoPersePutDto.Itens != null && relatorioDeCreditoPersePutDto.Itens.Any())
         {
+            var dtoItensIds = relatorioDeCreditoPersePutDto.Itens
+                .Where(i => i.Id > 0)
+                .Select(i => i.Id)
+                .ToList();
+
+            // Deletar itens que foram removidos (existem no banco mas não no DTO)
+            foreach (var existingItem in existingItens)
+            {
+                if (!dtoItensIds.Contains(existingItem.Id))
+                {
+                    existingItem.Delete(updatedById);
+                }
+            }
+
+            // Atualizar ou criar itens
             foreach (var itemDto in relatorioDeCreditoPersePutDto.Itens)
             {
                 var item = _mapper.Map<ItemRelatorioDeCreditoPerse>(itemDto);
                 item.RelatorioDeCreditoPerseId = updatedRelatorio.Id;
-                await _itemRepository.CreateAsync(item, updatedById);
+
+                if (itemDto.Id > 0 && existingItensIds.Contains(itemDto.Id))
+                {
+                    // Item existe - atualizar
+                    await _itemRepository.UpdateAsync(item, updatedById);
+                }
+                else
+                {
+                    // Item novo - criar
+                    await _itemRepository.CreateAsync(item, updatedById);
+                }
             }
+        }
+        else
+        {
+            // Se não há itens no DTO, deletar todos os existentes
+            await _itemRepository.DeleteByRelatorioIdAsync(updatedRelatorio.Id, updatedById);
         }
 
         return new Response<RelatorioDeCreditoPersePutDto>(true, "Success", _mapper.Map<RelatorioDeCreditoPersePutDto>(updatedRelatorio), 200);
@@ -112,7 +141,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
         return new Response<bool>(result, "Success", 200);
     }
 
-    public async Task<Response<RelatorioImportResultDto>> ImportFromExcelAsync(IFormFile file, string createdById)
+    public async Task<Response<RelatorioImportResultDto>> ImportFromExcelAsync(IFormFile file, string createdById, DateTime dataEmissao)
     {
         var result = new RelatorioImportResultDto();
 
@@ -134,7 +163,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             // Se for CSV, processar como texto
             if (extension == ".csv")
             {
-                return await ProcessCsvImport(stream, createdById, result);
+                return await ProcessCsvImport(stream, createdById, result, dataEmissao);
             }
 
             // Se for Excel, usar ClosedXML
@@ -186,12 +215,8 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             // A linha de totais é a próxima após o cabeçalho
             int totalRow = headerRow + 1;
 
-            var anoPeriodoStr = worksheet.Cell(totalRow, 1).GetString().Trim();
-            if (!int.TryParse(anoPeriodoStr, out int anoPeriodo))
-            {
-                result.Errors.Add($"Erro ao ler o ano do período. Valor encontrado: '{anoPeriodoStr}'");
-                return new Response<RelatorioImportResultDto>(false, "Formato de arquivo inválido - Ano do período não encontrado", result, 400);
-            }
+            // Nota: dataEmissao vem como parâmetro da API (informado pelo usuário)
+            // Não precisamos ler do arquivo, pois é apenas para auditoria/identificação
 
             var totalIRPJ = ParseDecimal(worksheet.Cell(totalRow, 2).GetString());
             var totalCSLL = ParseDecimal(worksheet.Cell(totalRow, 3).GetString());
@@ -234,8 +259,11 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
                     if (mesAno.Length != 2)
                         continue;
 
-                    if (!int.TryParse(mesAno[0], out int mesPeriodo) || !int.TryParse(mesAno[1], out int anoItem))
+                    if (!int.TryParse(mesAno[0], out int mesPeriodoItem) || !int.TryParse(mesAno[1], out int anoItem))
                         continue;
+
+                    // Criar data de emissão a partir do mês e ano parseados (UTC, meio-dia)
+                    DateTime dataEmissaoItem = new DateTime(anoItem, mesPeriodoItem, 1, 12, 0, 0, DateTimeKind.Utc);
 
                     var numPedidoStr = worksheet.Cell(row, 2).GetString();
                     int? numPedido = null;
@@ -245,8 +273,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
                     var item = new ItemRelatorioDeCreditoPerse
                     {
                         TipoTributo = tipoTributo,
-                        MesPeriodo = mesPeriodo,
-                        AnoPeriodo = anoItem,
+                        DataEmissao = dataEmissaoItem,
                         NumPedido = numPedido,
                         TotalSolicitado = ParseDecimal(worksheet.Cell(row, 3).GetString()),
                         CorrecaoMonetaria = ParseDecimal(worksheet.Cell(row, 4).GetString()),
@@ -273,7 +300,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             var relatorio = new RelatorioDeCreditoPerse
             {
                 ClienteId = cliente.Id,
-                AnoPeriodo = anoPeriodo,
+                DataEmissao = dataEmissao,
                 TotalIRPJ = totalIRPJ,
                 TotalCSLL = totalCSLL,
                 TotalPIS = totalPIS,
@@ -346,7 +373,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
 
             currentRow++;
-            worksheet.Cell(currentRow, 1).Value = relatorio.AnoPeriodo;
+            worksheet.Cell(currentRow, 1).Value = relatorio.DataEmissao.ToString("MM/yyyy");
             worksheet.Cell(currentRow, 2).Value = relatorio.TotalIRPJ;
             worksheet.Cell(currentRow, 2).Style.NumberFormat.Format = "R$ #,##0.00";
             worksheet.Cell(currentRow, 3).Value = relatorio.TotalCSLL;
@@ -376,11 +403,11 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             currentRow++;
 
             // Itens
-            var itensOrdenados = relatorio.Itens.OrderBy(i => i.TipoTributo).ThenBy(i => i.MesPeriodo).ToList();
+            var itensOrdenados = relatorio.Itens.OrderBy(i => i.TipoTributo).ThenBy(i => i.DataEmissao).ToList();
 
             foreach (var item in itensOrdenados)
             {
-                worksheet.Cell(currentRow, 1).Value = $"{item.TipoTributo} {item.MesPeriodo:00}/{item.AnoPeriodo}";
+                worksheet.Cell(currentRow, 1).Value = $"{item.TipoTributo} {item.DataEmissao:MM/yyyy}";
                 worksheet.Cell(currentRow, 2).Value = item.NumPedido?.ToString() ?? "";
                 worksheet.Cell(currentRow, 3).Value = item.TotalSolicitado;
                 worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = "R$ #,##0.00";
@@ -418,7 +445,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
         }
     }
 
-    private async Task<Response<RelatorioImportResultDto>> ProcessCsvImport(MemoryStream stream, string createdById, RelatorioImportResultDto result)
+    private async Task<Response<RelatorioImportResultDto>> ProcessCsvImport(MemoryStream stream, string createdById, RelatorioImportResultDto result, DateTime dataEmissao)
     {
         try
         {
@@ -474,7 +501,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             }
 
             var totalParts = lines[totalRowIndex].Split(delimiter);
-            var anoPeriodo = int.Parse(totalParts[0].Trim());
+            // Nota: dataEmissao vem como parâmetro da API (informado pelo usuário)
             var totalIRPJ = totalParts.Length > 1 ? ParseDecimal(totalParts[1]) : 0;
             var totalCSLL = totalParts.Length > 2 ? ParseDecimal(totalParts[2]) : 0;
             var totalPIS = totalParts.Length > 3 ? ParseDecimal(totalParts[3]) : 0;
@@ -519,8 +546,11 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
                     if (mesAno.Length != 2)
                         continue;
 
-                    if (!int.TryParse(mesAno[0], out int mesPeriodo) || !int.TryParse(mesAno[1], out int anoItem))
+                    if (!int.TryParse(mesAno[0], out int mesPeriodoItem) || !int.TryParse(mesAno[1], out int anoItem))
                         continue;
+
+                    // Criar data de emissão a partir do mês e ano parseados (UTC, meio-dia)
+                    DateTime dataEmissaoItem = new DateTime(anoItem, mesPeriodoItem, 1, 12, 0, 0, DateTimeKind.Utc);
 
                     int? numPedido = null;
                     if (itemParts.Length > 1 && int.TryParse(itemParts[1].Trim(), out int pedido))
@@ -529,8 +559,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
                     var item = new ItemRelatorioDeCreditoPerse
                     {
                         TipoTributo = tipoTributo,
-                        MesPeriodo = mesPeriodo,
-                        AnoPeriodo = anoItem,
+                        DataEmissao = dataEmissaoItem,
                         NumPedido = numPedido,
                         TotalSolicitado = itemParts.Length > 2 ? ParseDecimal(itemParts[2]) : 0,
                         CorrecaoMonetaria = itemParts.Length > 3 ? ParseDecimal(itemParts[3]) : 0,
@@ -559,7 +588,7 @@ public class RelatorioDeCreditoPerseService : IRelatorioDeCreditoPerseService
             var relatorio = new RelatorioDeCreditoPerse
             {
                 ClienteId = cliente.Id,
-                AnoPeriodo = anoPeriodo,
+                DataEmissao = dataEmissao,
                 TotalIRPJ = totalIRPJ,
                 TotalCSLL = totalCSLL,
                 TotalPIS = totalPIS,

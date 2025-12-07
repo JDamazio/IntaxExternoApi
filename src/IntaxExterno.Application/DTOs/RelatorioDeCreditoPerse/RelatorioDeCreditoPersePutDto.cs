@@ -4,7 +4,7 @@ public class RelatorioDeCreditoPersePutDto
 {
     public int Id { get; set; }
     public int ClienteId { get; set; }
-    public int AnoPeriodo { get; set; }
+    public DateTime DataEmissao { get; set; }
     public decimal TotalIRPJ { get; set; }
     public decimal TotalCSLL { get; set; }
     public decimal TotalPIS { get; set; }

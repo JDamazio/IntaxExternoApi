@@ -3,6 +3,7 @@ using System;
 using IntaxExterno.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IntaxExterno.Infra.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251207164112_ajustaperiodo")]
+    partial class ajustaperiodo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,6 +116,9 @@ namespace IntaxExterno.Infra.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AnoPeriodo")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("CorrecaoMonetaria")
                         .HasColumnType("decimal(18,2)");
 
@@ -123,9 +129,6 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime>("DataEmissao")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime?>("Deleted")
                         .HasColumnType("timestamp with time zone");
 
@@ -135,6 +138,9 @@ namespace IntaxExterno.Infra.Data.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("MesPeriodo")
+                        .HasColumnType("integer");
 
                     b.Property<int?>("NumPedido")
                         .HasColumnType("integer");
@@ -409,6 +415,9 @@ namespace IntaxExterno.Infra.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AnoPeriodo")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ClienteId")
                         .HasColumnType("integer");
 
@@ -419,9 +428,6 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime>("DataEmissao")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTime?>("Deleted")
                         .HasColumnType("timestamp with time zone");
 
@@ -431,6 +437,9 @@ namespace IntaxExterno.Infra.Data.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("MesPeriodo")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("Saldo")
                         .HasColumnType("decimal(18,2)");

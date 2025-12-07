@@ -23,6 +23,28 @@ public class ItemRelatorioDeCreditoPerseRepository : IItemRelatorioDeCreditoPers
         return itemRelatorioDeCreditoPerse;
     }
 
+    public async Task<ItemRelatorioDeCreditoPerse?> UpdateAsync(ItemRelatorioDeCreditoPerse itemRelatorioDeCreditoPerse, string updatedById)
+    {
+        var existingItem = await _context.Set<ItemRelatorioDeCreditoPerse>().FindAsync(itemRelatorioDeCreditoPerse.Id);
+        if (existingItem == null)
+            return null;
+
+        // Atualizar apenas os campos específicos da entidade
+        existingItem.TipoTributo = itemRelatorioDeCreditoPerse.TipoTributo;
+        existingItem.DataEmissao = itemRelatorioDeCreditoPerse.DataEmissao;
+        existingItem.NumPedido = itemRelatorioDeCreditoPerse.NumPedido;
+        existingItem.TotalSolicitado = itemRelatorioDeCreditoPerse.TotalSolicitado;
+        existingItem.CorrecaoMonetaria = itemRelatorioDeCreditoPerse.CorrecaoMonetaria;
+        existingItem.TotalRecebido = itemRelatorioDeCreditoPerse.TotalRecebido;
+        existingItem.Observacao = itemRelatorioDeCreditoPerse.Observacao;
+
+        // Atualizar campos de auditoria
+        existingItem.Update(updatedById);
+
+        await _context.SaveChangesAsync();
+        return existingItem;
+    }
+
     public async Task<IEnumerable<ItemRelatorioDeCreditoPerse>> GetByRelatorioIdAsync(int relatorioId)
     {
         return await _context.Set<ItemRelatorioDeCreditoPerse>()

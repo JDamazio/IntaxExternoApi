@@ -50,12 +50,16 @@ public class DomainToDtoMappingProfile : Profile
             .ForMember(dest => dest.PropostaTeses, opt => opt.Ignore());
 
         // ItemRelatorioDeCreditoPerse Mappings
-        CreateMap<ItemRelatorioDeCreditoPerse, ItemRelatorioDeCreditoPerseDto>().ReverseMap();
+        CreateMap<ItemRelatorioDeCreditoPerse, ItemRelatorioDeCreditoPerseDto>().ReverseMap()
+            .ForMember(dest => dest.DataEmissao, opt => opt.MapFrom(src =>
+                ConvertToUtc(src.DataEmissao)));
 
         // RelatorioDeCreditoPerse Mappings
         CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPersePostDto>()
             .ReverseMap()
-            .ForMember(dest => dest.Itens, opt => opt.Ignore());
+            .ForMember(dest => dest.Itens, opt => opt.Ignore())
+            .ForMember(dest => dest.DataEmissao, opt => opt.MapFrom(src =>
+                ConvertToUtc(src.DataEmissao)));
 
         CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPerseGetDto>()
             .ForMember(dest => dest.ClienteNome, opt => opt.MapFrom(src => src.Cliente.Nome))
@@ -65,6 +69,18 @@ public class DomainToDtoMappingProfile : Profile
 
         CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPersePutDto>()
             .ReverseMap()
-            .ForMember(dest => dest.Itens, opt => opt.Ignore());
+            .ForMember(dest => dest.Itens, opt => opt.Ignore())
+            .ForMember(dest => dest.DataEmissao, opt => opt.MapFrom(src =>
+                ConvertToUtc(src.DataEmissao)));
+    }
+
+    // Método helper para converter DateTime para UTC corretamente
+    // Trata a data como "date-only" (sem timezone), mantendo o mesmo dia/mês/ano
+    // Usa 12:00:00 (meio-dia) para evitar que conversões de timezone mudem o dia
+    private static DateTime ConvertToUtc(DateTime dateTime)
+    {
+        // SEMPRE normaliza para meio-dia UTC, independente do Kind
+        // Isso garante consistência e evita problemas de timezone
+        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 12, 0, 0, DateTimeKind.Utc);
     }
 }
