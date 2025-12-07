@@ -33,13 +33,27 @@ public class ParceiroRepository : IParceiroRepository
         return await _context.Parceiros.FindAsync(id);
     }
 
-    public async Task<Parceiro> UpdateAsync(Parceiro parceiro, string updatedById)
+    public async Task<Parceiro?> UpdateAsync(Parceiro parceiro, string updatedById)
     {
-        parceiro.Update(updatedById);
+        var existingParceiro = await _context.Parceiros.FindAsync(parceiro.Id);
+        if (existingParceiro == null)
+            return null;
 
-        _context.Parceiros.Update(parceiro);
+        // Atualizar apenas os campos específicos da entidade
+        existingParceiro.Nome = parceiro.Nome;
+        existingParceiro.CPF = parceiro.CPF;
+        existingParceiro.Telefone = parceiro.Telefone;
+        existingParceiro.Email = parceiro.Email;
+        existingParceiro.Pix = parceiro.Pix;
+        existingParceiro.Porcentagem = parceiro.Porcentagem;
+        existingParceiro.DataNascimento = parceiro.DataNascimento;
+        existingParceiro.UserId = parceiro.UserId;
+
+        // Atualizar campos de auditoria
+        existingParceiro.Update(updatedById);
+
         await _context.SaveChangesAsync();
-        return parceiro;
+        return existingParceiro;
     }
 
     public async Task<bool> DeleteAsync(int id, string deletedById)

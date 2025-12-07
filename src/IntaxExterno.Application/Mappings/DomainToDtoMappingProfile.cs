@@ -3,6 +3,7 @@ using IntaxExterno.Application.DTOs.Parceiro;
 using IntaxExterno.Application.DTOs.Cliente;
 using IntaxExterno.Application.DTOs.Proposta;
 using IntaxExterno.Application.DTOs.Teses;
+using IntaxExterno.Application.DTOs.RelatorioDeCreditoPerse;
 using IntaxExterno.Domain.Entities;
 
 namespace IntaxExterno.Application.Mappings;
@@ -47,5 +48,23 @@ public class DomainToDtoMappingProfile : Profile
             .ForMember(dest => dest.TesesIds, opt => opt.Ignore())
             .ReverseMap()
             .ForMember(dest => dest.PropostaTeses, opt => opt.Ignore());
+
+        // ItemRelatorioDeCreditoPerse Mappings
+        CreateMap<ItemRelatorioDeCreditoPerse, ItemRelatorioDeCreditoPerseDto>().ReverseMap();
+
+        // RelatorioDeCreditoPerse Mappings
+        CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPersePostDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.Itens, opt => opt.Ignore());
+
+        CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPerseGetDto>()
+            .ForMember(dest => dest.ClienteNome, opt => opt.MapFrom(src => src.Cliente.Nome))
+            .ForMember(dest => dest.QuantidadeItens, opt => opt.MapFrom(src => src.Itens != null ? src.Itens.Count : 0));
+
+        CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPerseGetDetailsDto>();
+
+        CreateMap<RelatorioDeCreditoPerse, RelatorioDeCreditoPersePutDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.Itens, opt => opt.Ignore());
     }
 }

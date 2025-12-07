@@ -33,13 +33,21 @@ public class TesesRepository : ITesesRepository
         return await _context.Teses.FindAsync(id);
     }
 
-    public async Task<Teses> UpdateAsync(Teses teses, string updatedById)
+    public async Task<Teses?> UpdateAsync(Teses teses, string updatedById)
     {
-        teses.Update(updatedById);
+        var existingTeses = await _context.Teses.FindAsync(teses.Id);
+        if (existingTeses == null)
+            return null;
 
-        _context.Teses.Update(teses);
+        // Atualizar apenas os campos específicos da entidade
+        existingTeses.Nome = teses.Nome;
+        existingTeses.Descrição = teses.Descrição;
+
+        // Atualizar campos de auditoria
+        existingTeses.Update(updatedById);
+
         await _context.SaveChangesAsync();
-        return teses;
+        return existingTeses;
     }
 
     public async Task<bool> DeleteAsync(int id, string deletedById)

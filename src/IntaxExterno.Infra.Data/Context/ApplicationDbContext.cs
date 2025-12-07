@@ -15,6 +15,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Proposta> Propostas { get; set; }
     public DbSet<PropostaTeses> PropostaTeses { get; set; }
     public DbSet<Teses> Teses { get; set; }
+    public DbSet<RelatorioDeCreditoPerse> RelatoriosDeCreditoPerse { get; set; }
+    public DbSet<ItemRelatorioDeCreditoPerse> ItensRelatorioDeCreditoPerse { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

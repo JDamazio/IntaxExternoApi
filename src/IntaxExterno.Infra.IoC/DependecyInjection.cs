@@ -76,6 +76,8 @@ public static class DependecyInjection
         services.AddScoped<IPropostaRepository, PropostaRepository>();
         services.AddScoped<IPropostaTesesRepository, PropostaTesesRepository>();
         services.AddScoped<ITesesRepository, TesesRepository>();
+        services.AddScoped<IRelatorioDeCreditoPerseRepository, RelatorioDeCreditoPerseRepository>();
+        services.AddScoped<IItemRelatorioDeCreditoPerseRepository, ItemRelatorioDeCreditoPerseRepository>();
         #endregion
 
         #region Services
@@ -83,6 +85,7 @@ public static class DependecyInjection
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IPropostaService, PropostaService>();
         services.AddScoped<ITesesService, TesesService>();
+        services.AddScoped<IRelatorioDeCreditoPerseService, RelatorioDeCreditoPerseService>();
         #endregion
 
         #region Configuration

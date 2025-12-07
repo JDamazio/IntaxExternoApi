@@ -33,13 +33,31 @@ public class ClienteRepository : IClienteRepository
         return await _context.Clientes.FindAsync(id);
     }
 
-    public async Task<Cliente> UpdateAsync(Cliente cliente, string updatedById)
+    public async Task<Cliente?> GetByCNPJAsync(string cnpj)
     {
-        cliente.Update(updatedById);
+        return await _context.Clientes
+            .Where(c => c.CNPJ == cnpj && c.IsActive)
+            .FirstOrDefaultAsync();
+    }
 
-        _context.Clientes.Update(cliente);
+    public async Task<Cliente?> UpdateAsync(Cliente cliente, string updatedById)
+    {
+        var existingCliente = await _context.Clientes.FindAsync(cliente.Id);
+        if (existingCliente == null)
+            return null;
+
+        // Atualizar apenas os campos específicos da entidade
+        existingCliente.Nome = cliente.Nome;
+        existingCliente.Telefone = cliente.Telefone;
+        existingCliente.Email = cliente.Email;
+        existingCliente.EmailResponsavel = cliente.EmailResponsavel;
+        existingCliente.CNPJ = cliente.CNPJ;
+
+        // Atualizar campos de auditoria
+        existingCliente.Update(updatedById);
+
         await _context.SaveChangesAsync();
-        return cliente;
+        return existingCliente;
     }
 
     public async Task<bool> DeleteAsync(int id, string deletedById)

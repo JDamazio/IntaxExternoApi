@@ -42,13 +42,21 @@ public class PropostaRepository : IPropostaRepository
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
-    public async Task<Proposta> UpdateAsync(Proposta proposta, string updatedById)
+    public async Task<Proposta?> UpdateAsync(Proposta proposta, string updatedById)
     {
-        proposta.Update(updatedById);
+        var existingProposta = await _context.Propostas.FindAsync(proposta.Id);
+        if (existingProposta == null)
+            return null;
 
-        _context.Propostas.Update(proposta);
+        // Atualizar apenas os campos específicos da entidade
+        existingProposta.ParceiroId = proposta.ParceiroId;
+        existingProposta.ClienteId = proposta.ClienteId;
+
+        // Atualizar campos de auditoria
+        existingProposta.Update(updatedById);
+
         await _context.SaveChangesAsync();
-        return proposta;
+        return existingProposta;
     }
 
     public async Task<bool> DeleteAsync(int id, string deletedById)
