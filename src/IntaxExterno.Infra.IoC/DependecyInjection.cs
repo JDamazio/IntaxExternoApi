@@ -8,9 +8,11 @@ using IntaxExterno.Application.Mappings;
 using IntaxExterno.Application.Interfaces;
 using IntaxExterno.Application.Services;
 using IntaxExterno.Domain.Interfaces;
+using IntaxExterno.Domain.Enums;
 using IntaxExterno.Infra.Data.Context;
 using IntaxExterno.Infra.Data.Identity;
 using IntaxExterno.Infra.Data.Repositories;
+using IntaxExterno.Infra.Data.Helpers;
 using System.Text;
 
 namespace IntaxExterno.Infra.IoC;
@@ -64,6 +66,18 @@ public static class DependecyInjection
         });
         #endregion
 
+        #region Policies
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(RoleType.Admin.ToString(), policy => policy.RequireRole(RoleType.Admin.ToString()));
+            options.AddPolicy(RoleType.Cliente.ToString(), policy => policy.RequireRole(RoleType.Cliente.ToString()));
+        });
+        #endregion
+
+        #region Seed
+        services.AddScoped<ISeedUserAndRoleInitial, SeedUserAndRoleInitial>();
+        #endregion
+
         #region AutoMapper
 
         services.AddAutoMapper(x => x.AddProfile(typeof(DomainToDtoMappingProfile)));
@@ -78,6 +92,10 @@ public static class DependecyInjection
         services.AddScoped<ITesesRepository, TesesRepository>();
         services.AddScoped<IRelatorioDeCreditoPerseRepository, RelatorioDeCreditoPerseRepository>();
         services.AddScoped<IItemRelatorioDeCreditoPerseRepository, ItemRelatorioDeCreditoPerseRepository>();
+        services.AddScoped<IExclusaoIcmsResultadoRepository, ExclusaoIcmsResultadoRepository>();
+        services.AddScoped<IOportunidadeRepository, OportunidadeRepository>();
+        services.AddScoped<ISpedContribuicoesRepository, SpedContribuicoesRepository>();
+        services.AddScoped<ISpedFiscalRepository, SpedFiscalRepository>();
         #endregion
 
         #region Services
@@ -86,6 +104,11 @@ public static class DependecyInjection
         services.AddScoped<IPropostaService, PropostaService>();
         services.AddScoped<ITesesService, TesesService>();
         services.AddScoped<IRelatorioDeCreditoPerseService, RelatorioDeCreditoPerseService>();
+        services.AddScoped<IExclusaoIcmsService, ExclusaoIcmsService>();
+        services.AddScoped<IOportunidadeService, OportunidadeService>();
+        services.AddScoped<ISpedContribuicoesService, SpedContribuicoesService>();
+        services.AddScoped<ISpedFiscalService, SpedFiscalService>();
+        services.AddScoped<ISpedParserService, SpedParserService>();
         #endregion
 
         #region Configuration

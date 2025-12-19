@@ -3,8 +3,11 @@ using IntaxExterno.Application.DTOs.Parceiro;
 using IntaxExterno.Application.DTOs.Cliente;
 using IntaxExterno.Application.DTOs.Proposta;
 using IntaxExterno.Application.DTOs.Teses;
+using IntaxExterno.Application.DTOs.Oportunidade;
 using IntaxExterno.Application.DTOs.RelatorioDeCreditoPerse;
+using IntaxExterno.Application.DTOs.ExclusaoIcms;
 using IntaxExterno.Domain.Entities;
+using IntaxExterno.Domain.Enums;
 
 namespace IntaxExterno.Application.Mappings;
 
@@ -30,6 +33,46 @@ public class DomainToDtoMappingProfile : Profile
         CreateMap<Teses, TesesGetDetailsDto>().ReverseMap();
         CreateMap<Teses, TesesPutDto>().ReverseMap();
 
+        // Oportunidade Mappings
+        CreateMap<Oportunidade, OportunidadePostDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.TesesIds, opt => opt.Ignore())
+            .ReverseMap()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (StatusOportunidade)src.Status))
+            .ForMember(dest => dest.DataInicio, opt => opt.MapFrom(src => src.DataInicio.HasValue ? ConvertToUtc(src.DataInicio.Value) : (DateTime?)null))
+            .ForMember(dest => dest.OportunidadeTeses, opt => opt.Ignore())
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+            .ForMember(dest => dest.Parceiro, opt => opt.Ignore())
+            .ForMember(dest => dest.ResultadosExclusaoIcms, opt => opt.Ignore())
+            .ForMember(dest => dest.SpedContribuicoes, opt => opt.Ignore())
+            .ForMember(dest => dest.SpedFiscais, opt => opt.Ignore());
+
+        CreateMap<Oportunidade, OportunidadeGetDto>()
+            .ForMember(dest => dest.ClienteNome, opt => opt.MapFrom(src => src.Cliente != null ? src.Cliente.Nome : string.Empty))
+            .ForMember(dest => dest.ParceiroNome, opt => opt.MapFrom(src => src.Parceiro != null ? src.Parceiro.Nome : null))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.StatusDescricao, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.QuantidadeTeses, opt => opt.MapFrom(src => src.OportunidadeTeses != null ? src.OportunidadeTeses.Count : 0));
+
+        CreateMap<Oportunidade, OportunidadeGetDetailsDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.StatusDescricao, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.Teses, opt => opt.MapFrom(src => src.OportunidadeTeses.Select(ot => ot.Teses).ToList()));
+
+        CreateMap<Oportunidade, OportunidadePutDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.TesesIds, opt => opt.Ignore())
+            .ReverseMap()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (StatusOportunidade)src.Status))
+            .ForMember(dest => dest.DataInicio, opt => opt.MapFrom(src => src.DataInicio.HasValue ? ConvertToUtc(src.DataInicio.Value) : (DateTime?)null))
+            .ForMember(dest => dest.DataFechamento, opt => opt.MapFrom(src => src.DataFechamento.HasValue ? ConvertToUtc(src.DataFechamento.Value) : (DateTime?)null))
+            .ForMember(dest => dest.OportunidadeTeses, opt => opt.Ignore())
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+            .ForMember(dest => dest.Parceiro, opt => opt.Ignore())
+            .ForMember(dest => dest.ResultadosExclusaoIcms, opt => opt.Ignore())
+            .ForMember(dest => dest.SpedContribuicoes, opt => opt.Ignore())
+            .ForMember(dest => dest.SpedFiscais, opt => opt.Ignore());
+
         // Proposta Mappings
         CreateMap<Proposta, PropostaPostDto>()
             .ForMember(dest => dest.TesesIds, opt => opt.Ignore())
@@ -48,6 +91,30 @@ public class DomainToDtoMappingProfile : Profile
             .ForMember(dest => dest.TesesIds, opt => opt.Ignore())
             .ReverseMap()
             .ForMember(dest => dest.PropostaTeses, opt => opt.Ignore());
+
+        // SPED Contribuições Mappings
+        CreateMap<SpedContribuicoes, SpedContribuicoesPostDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.DataInicial, opt => opt.MapFrom(src => src.DataInicial.HasValue ? ConvertToUtc(src.DataInicial.Value) : (DateTime?)null))
+            .ForMember(dest => dest.Oportunidade, opt => opt.Ignore());
+
+        CreateMap<SpedContribuicoes, SpedContribuicoesGetDto>();
+
+        CreateMap<SpedContribuicoes, SpedContribuicoesDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.DataInicial, opt => opt.MapFrom(src => src.DataInicial.HasValue ? ConvertToUtc(src.DataInicial.Value) : (DateTime?)null));
+
+        // SPED Fiscal Mappings
+        CreateMap<SpedFiscal, SpedFiscalPostDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.DataInicial, opt => opt.MapFrom(src => src.DataInicial.HasValue ? ConvertToUtc(src.DataInicial.Value) : (DateTime?)null))
+            .ForMember(dest => dest.Oportunidade, opt => opt.Ignore());
+
+        CreateMap<SpedFiscal, SpedFiscalGetDto>();
+
+        CreateMap<SpedFiscal, SpedFiscalDto>()
+            .ReverseMap()
+            .ForMember(dest => dest.DataInicial, opt => opt.MapFrom(src => src.DataInicial.HasValue ? ConvertToUtc(src.DataInicial.Value) : (DateTime?)null));
 
         // ItemRelatorioDeCreditoPerse Mappings
         CreateMap<ItemRelatorioDeCreditoPerse, ItemRelatorioDeCreditoPerseDto>().ReverseMap()

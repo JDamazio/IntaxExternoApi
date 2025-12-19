@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IntaxExterno.Api.Helpers.Auth;
 using IntaxExterno.Api.Models;
+using IntaxExterno.Domain.Enums;
 using IntaxExterno.Infra.Data.Identity;
 
 namespace IntaxExterno.Api.Controllers;
@@ -69,7 +70,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("Users")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = nameof(RoleType.Admin))]
     public async Task<ActionResult<IEnumerable<UserInfo>>> GetAllUsers()
     {
         var users = await _userManager.Users

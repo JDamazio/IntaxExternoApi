@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using IntaxExterno.Domain.Enums;
 
 namespace IntaxExterno.Domain.Entities;
 
@@ -11,4 +12,5 @@ public class Cliente : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string EmailResponsavel { get; set; } = string.Empty;
     public string CNPJ { get; set; } = string.Empty;
+    public RegimeTributario RegimeTributario { get; set; } = RegimeTributario.LucroPresumido;
 }

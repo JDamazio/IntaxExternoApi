@@ -17,6 +17,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Teses> Teses { get; set; }
     public DbSet<RelatorioDeCreditoPerse> RelatoriosDeCreditoPerse { get; set; }
     public DbSet<ItemRelatorioDeCreditoPerse> ItensRelatorioDeCreditoPerse { get; set; }
+    public DbSet<Oportunidade> Oportunidades { get; set; }
+    public DbSet<OportunidadeTeses> OportunidadeTeses { get; set; }
+    public DbSet<ExclusaoIcmsResultado> ExclusaoIcmsResultados { get; set; }
+    public DbSet<SpedContribuicoes> SpedContribuicoes { get; set; }
+    public DbSet<SpedFiscal> SpedFiscais { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

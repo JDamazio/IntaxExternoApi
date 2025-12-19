@@ -1,3 +1,5 @@
+using IntaxExterno.Domain.Enums;
+
 namespace IntaxExterno.Application.DTOs.Cliente;
 
 public class ClienteGetDetailsDto
@@ -9,6 +11,7 @@ public class ClienteGetDetailsDto
     public string Email { get; set; } = string.Empty;
     public string EmailResponsavel { get; set; } = string.Empty;
     public string CNPJ { get; set; } = string.Empty;
+    public RegimeTributario RegimeTributario { get; set; }
     public bool IsActive { get; set; }
     public DateTime Created { get; set; }
     public string? CreatedBy { get; set; }

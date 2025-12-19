@@ -3,6 +3,7 @@ using System;
 using IntaxExterno.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IntaxExterno.Infra.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251218014606_sped")]
+    partial class sped
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,9 +72,6 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int>("RegimeTributario")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Telefone")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -120,8 +120,8 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime?>("DataInicial")
                         .HasColumnType("timestamp with time zone");
@@ -130,57 +130,41 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DeletedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<int>("OportunidadeId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("OportunidadeId1")
-                        .HasColumnType("integer");
-
                     b.Property<string>("UID")
                         .IsRequired()
-                        .HasMaxLength(36)
-                        .HasColumnType("character varying(36)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("Updated")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal?>("ValorCofins")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("ValorIcms")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("ValorPis")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("ValorPisCofins")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsActive")
-                        .HasDatabaseName("IX_ExclusaoIcmsResultado_IsActive");
-
-                    b.HasIndex("OportunidadeId1");
-
-                    b.HasIndex("UID")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ExclusaoIcmsResultado_UID");
-
-                    b.HasIndex("OportunidadeId", "IsActive")
-                        .HasDatabaseName("IX_ExclusaoIcmsResultado_OportunidadeId_IsActive");
+                    b.HasIndex("OportunidadeId");
 
                     b.ToTable("ExclusaoIcmsResultados");
                 });
@@ -1146,14 +1130,10 @@ namespace IntaxExterno.Infra.Data.Migrations
             modelBuilder.Entity("IntaxExterno.Domain.Entities.ExclusaoIcmsResultado", b =>
                 {
                     b.HasOne("IntaxExterno.Domain.Entities.Oportunidade", "Oportunidade")
-                        .WithMany()
-                        .HasForeignKey("OportunidadeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("IntaxExterno.Domain.Entities.Oportunidade", null)
                         .WithMany("ResultadosExclusaoIcms")
-                        .HasForeignKey("OportunidadeId1");
+                        .HasForeignKey("OportunidadeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Oportunidade");
                 });

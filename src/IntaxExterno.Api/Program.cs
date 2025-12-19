@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using IntaxExterno.Api.Helpers.Auth;
+using IntaxExterno.Domain.Interfaces;
 using IntaxExterno.Infra.Data.Context;
 using IntaxExterno.Infra.IoC;
 
@@ -11,7 +12,11 @@ builder.Services.AddInsfrastructure(builder.Configuration);
 builder.Services.AddInfrastructureSwagger();
 builder.Services.AddScoped<Auth>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -20,6 +25,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 CreateDatabase(app);
+InitializeSeedData(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -59,4 +65,12 @@ static void CreateDatabase(WebApplication app)
     var serviceScope = app.Services.CreateScope();
     var dataContext = serviceScope.ServiceProvider.GetService<ApplicationDbContext>();
     dataContext?.Database.Migrate();
+}
+
+static void InitializeSeedData(WebApplication app)
+{
+    using var serviceScope = app.Services.CreateScope();
+    var seeder = serviceScope.ServiceProvider.GetService<ISeedUserAndRoleInitial>();
+    seeder?.SeedRoles();
+    seeder?.SeedUsers();
 }
