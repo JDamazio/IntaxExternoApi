@@ -96,6 +96,10 @@ public static class DependecyInjection
         services.AddScoped<IOportunidadeRepository, OportunidadeRepository>();
         services.AddScoped<ISpedContribuicoesRepository, SpedContribuicoesRepository>();
         services.AddScoped<ISpedFiscalRepository, SpedFiscalRepository>();
+        services.AddScoped<IInsumosResultadoRepository, InsumosResultadoRepository>();
+        services.AddScoped<ISpedContabilI050Repository, SpedContabilI050Repository>();
+        services.AddScoped<ISpedContabilI250Repository, SpedContabilI250Repository>();
+        services.AddScoped<ISpedContabilI155Repository, SpedContabilI155Repository>();
         #endregion
 
         #region Services
@@ -109,6 +113,7 @@ public static class DependecyInjection
         services.AddScoped<ISpedContribuicoesService, SpedContribuicoesService>();
         services.AddScoped<ISpedFiscalService, SpedFiscalService>();
         services.AddScoped<ISpedParserService, SpedParserService>();
+        services.AddScoped<IInsumosService, InsumosService>();
         #endregion
 
         #region Configuration

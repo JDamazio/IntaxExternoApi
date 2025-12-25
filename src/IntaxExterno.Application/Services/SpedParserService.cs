@@ -1,4 +1,5 @@
 using IntaxExterno.Application.DTOs.ExclusaoIcms;
+using IntaxExterno.Application.DTOs.Insumos;
 using System.Globalization;
 using System.Text;
 
@@ -7,6 +8,7 @@ namespace IntaxExterno.Application.Services;
 public interface ISpedParserService
 {
     Task<SpedParseResult> ParseSpedFilesAsync(Stream contribuicoesStream, Stream fiscalStream);
+    Task<SpedContabilParseResult> ParseSpedContabilAsync(Stream contabilStream);
 }
 
 public class SpedParserService : ISpedParserService
@@ -334,6 +336,169 @@ public class SpedParserService : ISpedParserService
     }
 
     /// <summary>
+    /// Parse SPED Contábil (ECD)
+    /// Processa blocos I050 (Plano de Contas) e I250 (Lançamentos)
+    /// </summary>
+    public async Task<SpedContabilParseResult> ParseSpedContabilAsync(Stream stream)
+    {
+        var result = new SpedContabilParseResult();
+        DateTime? dataInicial = null;
+        DateTime? dataFinal = null;
+
+        using var reader = new StreamReader(stream, Encoding.GetEncoding("ISO-8859-1"));
+
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            var fields = line.Split('|');
+            if (fields.Length < 2) continue;
+
+            var registro = fields[1].Trim();
+
+            try
+            {
+                switch (registro)
+                {
+                    case "0000": // Cabeçalho do arquivo
+                        if (fields.Length > 6)
+                        {
+                            // Data inicial (campo 5)
+                            var dtIniStr = GetField(fields, 5);
+                            if (!string.IsNullOrEmpty(dtIniStr) && dtIniStr.Length == 8)
+                            {
+                                dataInicial = ParseDate(dtIniStr);
+                            }
+
+                            // Data final (campo 6)
+                            var dtFinStr = GetField(fields, 6);
+                            if (!string.IsNullOrEmpty(dtFinStr) && dtFinStr.Length == 8)
+                            {
+                                dataFinal = ParseDate(dtFinStr);
+                            }
+                        }
+                        break;
+
+                    case "I050": // Plano de Contas
+                        // |I050|DT_ALT|COD_NAT|IND_CTA|NÍVEL|COD_CTA|COD_CTA_SUP|CTA|
+                        if (fields.Length >= 8)
+                        {
+                            var codigoCta = GetField(fields, 6); // COD_CTA
+                            var nomeCta = GetField(fields, 8); // CTA (nome da conta)
+                            var codNatureza = GetField(fields, 3); // COD_NAT
+                            var nivel = GetField(fields, 5); // NÍVEL
+                            var indCta = GetField(fields, 4); // IND_CTA (A=Analítica, S=Sintética)
+
+                            // Apenas contas analíticas (onde ocorrem lançamentos)
+                            if (indCta == "A" && !string.IsNullOrEmpty(codigoCta))
+                            {
+                                result.PlanoContas.Add(new SpedContabilI050Dto
+                                {
+                                    CodigoCta = codigoCta,
+                                    NomeCta = nomeCta,
+                                    CodNatureza = codNatureza,
+                                    DataInicial = dataInicial,
+                                    DataFinal = dataFinal,
+                                    Status = 0
+                                });
+                            }
+                        }
+                        break;
+
+                    case "I155": // Saldos Periódicos das Contas
+                        // |I155|COD_CTA|COD_CCUS|VL_SLD_INI|IND_DC_INI|VL_DEB|VL_CRED|VL_SLD_FIN|IND_DC_FIN|
+                        if (fields.Length >= 9)
+                        {
+                            var codCta = GetField(fields, 2); // COD_CTA
+                            var codCcus = GetField(fields, 3); // COD_CCUS
+                            var vlDeb = ParseDecimal(GetField(fields, 6)); // VL_DEB (Débito do período)
+                            var vlCred = ParseDecimal(GetField(fields, 7)); // VL_CRED (Crédito do período)
+                            var indDcFin = GetField(fields, 9); // IND_DC_FIN (D=Devedor, C=Credor)
+
+                            if (string.IsNullOrEmpty(codCta))
+                                continue;
+
+                            result.Saldos.Add(new SpedContabilI155Dto
+                            {
+                                CodCta = codCta,
+                                CodCcus = string.IsNullOrEmpty(codCcus) ? null : codCcus,
+                                ValorDebito = vlDeb,
+                                ValorCredito = vlCred,
+                                IndicadorSituacao = indDcFin,
+                                DataInicio = dataInicial,
+                                DataFim = dataFinal
+                            });
+                        }
+                        break;
+
+                    case "I250": // Lançamentos Contábeis
+                        // |I250|COD_CTA|COD_CCUS|VL_DC|IND_DC|NUM_ARQ|COD_HIST_PAD|HIST|COD_PART|
+                        if (fields.Length >= 5)
+                        {
+                            var codigoCta = GetField(fields, 2); // COD_CTA
+                            var valorStr = GetField(fields, 4); // VL_DC (Valor Débito/Crédito)
+                            var indDc = GetField(fields, 5); // IND_DC (D=Débito, C=Crédito)
+                            var hist = GetField(fields, 8); // HIST (Histórico)
+
+                            if (string.IsNullOrEmpty(codigoCta))
+                                continue;
+
+                            var valor = ParseDecimal(valorStr);
+                            if (!valor.HasValue || valor == 0)
+                                continue;
+
+                            // Ajusta sinal baseado em débito/crédito
+                            // Para insumos, consideramos débitos (despesas/custos)
+                            if (indDc == "C")
+                                valor = -valor; // Créditos são negativos
+
+                            result.Insumos.Add(new SpedContabilI250Dto
+                            {
+                                CodigoCta = codigoCta,
+                                DataApuracao = dataInicial, // Usar data do período
+                                Descricao = hist,
+                                Valor = valor,
+                                Situacao = 0, // 0=Active (padrão)
+                                IndicadorDC = indDc
+                            });
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log ou ignora erro de linha específica
+                Console.WriteLine($"Erro ao processar linha SPED Contábil: {ex.Message}");
+                continue;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Parse data no formato DDMMYYYY
+    /// </summary>
+    private DateTime? ParseDate(string dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr.Length != 8)
+            return null;
+
+        try
+        {
+            var dia = int.Parse(dateStr.Substring(0, 2));
+            var mes = int.Parse(dateStr.Substring(2, 2));
+            var ano = int.Parse(dateStr.Substring(4, 4));
+            return DateTime.SpecifyKind(new DateTime(ano, mes, dia), DateTimeKind.Utc);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Converte string para decimal usando cultura invariante
     /// </summary>
     private decimal? ParseDecimal(string value)
@@ -355,4 +520,11 @@ public class SpedParseResult
 {
     public List<SpedContribuicoesDto> DadosContribuicoes { get; set; } = new();
     public List<SpedFiscalDto> DadosFiscal { get; set; } = new();
+}
+
+public class SpedContabilParseResult
+{
+    public List<SpedContabilI050Dto> PlanoContas { get; set; } = new();
+    public List<SpedContabilI250Dto> Insumos { get; set; } = new();
+    public List<SpedContabilI155Dto> Saldos { get; set; } = new();
 }

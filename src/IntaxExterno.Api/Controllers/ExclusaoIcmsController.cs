@@ -61,6 +61,24 @@ public class ExclusaoIcmsController : ControllerBase
     }
 
     /// <summary>
+    /// Obtém os dados de entrada salvos (SPED Contribuições e Fiscal) de uma oportunidade
+    /// </summary>
+    /// <param name="oportunidadeId">ID da oportunidade</param>
+    /// <returns>Dados de entrada salvos</returns>
+    [HttpGet("dados-entrada/{oportunidadeId}")]
+    public async Task<ActionResult<CalcularExclusaoRequestDto>> GetDadosEntrada(int oportunidadeId)
+    {
+        var response = await _exclusaoIcmsService.GetDadosEntradaAsync(oportunidadeId);
+
+        if (!response.Success)
+        {
+            return StatusCode(response.StatusHttp, response.Message);
+        }
+
+        return StatusCode(response.StatusHttp, response);
+    }
+
+    /// <summary>
     /// Upload e processamento de arquivos SPED (Contribuições e Fiscal)
     /// </summary>
     /// <param name="oportunidadeId">ID da oportunidade</param>

@@ -11,6 +11,8 @@ public class ExclusaoIcmsService : IExclusaoIcmsService
 {
     private readonly IExclusaoIcmsResultadoRepository _resultadoRepository;
     private readonly IOportunidadeRepository _oportunidadeRepository;
+    private readonly ISpedContribuicoesRepository _spedContribuicoesRepository;
+    private readonly ISpedFiscalRepository _spedFiscalRepository;
 
     // Listas de CFOPs e CSTs para classificação
     private static readonly List<string> CfopFaturamento = new()
@@ -62,10 +64,14 @@ public class ExclusaoIcmsService : IExclusaoIcmsService
 
     public ExclusaoIcmsService(
         IExclusaoIcmsResultadoRepository resultadoRepository,
-        IOportunidadeRepository oportunidadeRepository)
+        IOportunidadeRepository oportunidadeRepository,
+        ISpedContribuicoesRepository spedContribuicoesRepository,
+        ISpedFiscalRepository spedFiscalRepository)
     {
         _resultadoRepository = resultadoRepository;
         _oportunidadeRepository = oportunidadeRepository;
+        _spedContribuicoesRepository = spedContribuicoesRepository;
+        _spedFiscalRepository = spedFiscalRepository;
     }
 
     /// <summary>
@@ -99,6 +105,9 @@ public class ExclusaoIcmsService : IExclusaoIcmsService
             var regimeTributario = oportunidade.Cliente?.RegimeTributario ?? RegimeTributario.LucroPresumido;
 
             var resultadoCalculado = CalcularExclusao(request, regimeTributario);
+
+            // Salvar dados de entrada (SPED Contribuições e Fiscal)
+            await SalvarDadosEntradaAsync(request, oportunidade.CreatedBy ?? "system");
 
             // Salvar resultado no banco
             var entidades = resultadoCalculado.Select(r => new ExclusaoIcmsResultado
@@ -384,5 +393,104 @@ public class ExclusaoIcmsService : IExclusaoIcmsService
         public decimal? ValorCofins { get; set; }
         public decimal? ValorPisCofins { get; set; }
         public DateTime? DataInicial { get; set; }
+    }
+
+    /// <summary>
+    /// Salva os dados de entrada (SPED Contribuições e Fiscal) no banco
+    /// </summary>
+    private async Task SalvarDadosEntradaAsync(CalcularExclusaoRequestDto request, string userId)
+    {
+        // Deletar dados antigos desta oportunidade
+        await _spedContribuicoesRepository.DeleteByOportunidadeIdAsync(request.OportunidadeId, userId);
+        await _spedFiscalRepository.DeleteByOportunidadeIdAsync(request.OportunidadeId, userId);
+
+        // Salvar SPED Contribuições
+        if (request.DadosContribuicoes.Any())
+        {
+            var contribuicoesEntities = request.DadosContribuicoes.Select(c => new SpedContribuicoes
+            {
+                OportunidadeId = request.OportunidadeId,
+                CodFiscal = c.CodFiscal,
+                CodSitPis = c.CodSitPis,
+                AliqPis = c.AliqPis,
+                AliqCofins = c.AliqCofins,
+                ValorIcms = c.ValorIcms,
+                DataInicial = c.DataInicial,
+                Regime = c.Regime
+            }).ToList();
+
+            await _spedContribuicoesRepository.CreateManyAsync(contribuicoesEntities, userId);
+        }
+
+        // Salvar SPED Fiscal
+        if (request.DadosFiscais.Any())
+        {
+            var fiscaisEntities = request.DadosFiscais.Select(f => new SpedFiscal
+            {
+                OportunidadeId = request.OportunidadeId,
+                Cfop = f.Cfop,
+                CstIcms = f.CstIcms,
+                ValorIcms = f.ValorIcms,
+                DataInicial = f.DataInicial
+            }).ToList();
+
+            await _spedFiscalRepository.CreateManyAsync(fiscaisEntities, userId);
+        }
+    }
+
+    /// <summary>
+    /// Busca os dados de entrada salvos (SPED Contribuições e Fiscal) de uma oportunidade
+    /// </summary>
+    public async Task<Response<CalcularExclusaoRequestDto>> GetDadosEntradaAsync(int oportunidadeId)
+    {
+        try
+        {
+            var contribuicoes = await _spedContribuicoesRepository.GetByOportunidadeIdAsync(oportunidadeId);
+            var fiscais = await _spedFiscalRepository.GetByOportunidadeIdAsync(oportunidadeId);
+
+            if (!contribuicoes.Any() && !fiscais.Any())
+                return new Response<CalcularExclusaoRequestDto>(
+                    false,
+                    "Nenhum dado de entrada encontrado para esta Oportunidade",
+                    404
+                );
+
+            var dadosEntrada = new CalcularExclusaoRequestDto
+            {
+                OportunidadeId = oportunidadeId,
+                DadosContribuicoes = contribuicoes.Select(c => new SpedContribuicoesDto
+                {
+                    CodFiscal = c.CodFiscal,
+                    CodSitPis = c.CodSitPis,
+                    AliqPis = c.AliqPis,
+                    AliqCofins = c.AliqCofins,
+                    ValorIcms = c.ValorIcms,
+                    DataInicial = c.DataInicial,
+                    Regime = c.Regime
+                }).ToList(),
+                DadosFiscais = fiscais.Select(f => new SpedFiscalDto
+                {
+                    Cfop = f.Cfop,
+                    CstIcms = f.CstIcms,
+                    ValorIcms = f.ValorIcms,
+                    DataInicial = f.DataInicial
+                }).ToList()
+            };
+
+            return new Response<CalcularExclusaoRequestDto>(
+                true,
+                "Dados de entrada carregados com sucesso",
+                dadosEntrada,
+                200
+            );
+        }
+        catch (Exception ex)
+        {
+            return new Response<CalcularExclusaoRequestDto>(
+                false,
+                $"Erro ao buscar dados de entrada: {ex.Message}",
+                500
+            );
+        }
     }
 }

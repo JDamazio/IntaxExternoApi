@@ -3,6 +3,7 @@ using System;
 using IntaxExterno.Infra.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace IntaxExterno.Infra.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251219022610_spedsinsumos")]
+    partial class spedsinsumos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -764,10 +767,6 @@ namespace IntaxExterno.Infra.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CodNatureza")
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)");
-
                     b.Property<string>("CodigoCta")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -806,20 +805,10 @@ namespace IntaxExterno.Infra.Data.Migrations
                     b.Property<int>("OportunidadeId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("QtdI250")
+                    b.Property<bool>("Selecionado")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("QtdI250Selecionados")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("Status")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("UID")
                         .IsRequired()
@@ -842,97 +831,13 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_SpedContabilI050_UID");
 
-                    b.HasIndex("OportunidadeId", "CodNatureza")
-                        .HasDatabaseName("IX_SpedContabilI050_OportunidadeId_CodNatureza");
-
                     b.HasIndex("OportunidadeId", "CodigoCta")
                         .HasDatabaseName("IX_SpedContabilI050_OportunidadeId_CodigoCta");
 
                     b.HasIndex("OportunidadeId", "IsActive")
                         .HasDatabaseName("IX_SpedContabilI050_OportunidadeId_IsActive");
 
-                    b.HasIndex("OportunidadeId", "Status")
-                        .HasDatabaseName("IX_SpedContabilI050_OportunidadeId_Status");
-
                     b.ToTable("SpedContabilI050");
-                });
-
-            modelBuilder.Entity("IntaxExterno.Domain.Entities.SpedContabilI155", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CodCcus")
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<string>("CodCta")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)");
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("DataFim")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DataInicio")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("Deleted")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("IndicadorSituacao")
-                        .IsRequired()
-                        .HasMaxLength(1)
-                        .HasColumnType("character varying(1)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("OportunidadeId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UID")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("Updated")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<decimal?>("ValorCredito")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("ValorDebito")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OportunidadeId");
-
-                    b.HasIndex("OportunidadeId", "CodCta");
-
-                    b.HasIndex("OportunidadeId", "IndicadorSituacao");
-
-                    b.HasIndex("OportunidadeId", "DataInicio", "DataFim");
-
-                    b.ToTable("SpedContabilI155", (string)null);
                 });
 
             modelBuilder.Entity("IntaxExterno.Domain.Entities.SpedContabilI250", b =>
@@ -970,10 +875,6 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("IndicadorDC")
-                        .HasMaxLength(1)
-                        .HasColumnType("character varying(1)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -982,10 +883,10 @@ namespace IntaxExterno.Infra.Data.Migrations
                     b.Property<int>("OportunidadeId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Situacao")
+                    b.Property<bool>("Selecionado")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("UID")
                         .IsRequired()
@@ -1011,14 +912,11 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_SpedContabilI250_UID");
 
-                    b.HasIndex("OportunidadeId", "DataApuracao")
-                        .HasDatabaseName("IX_SpedContabilI250_OportunidadeId_DataApuracao");
-
                     b.HasIndex("OportunidadeId", "IsActive")
                         .HasDatabaseName("IX_SpedContabilI250_OportunidadeId_IsActive");
 
-                    b.HasIndex("OportunidadeId", "CodigoCta", "Situacao")
-                        .HasDatabaseName("IX_SpedContabilI250_OportunidadeId_CodigoCta_Situacao");
+                    b.HasIndex("OportunidadeId", "CodigoCta", "Selecionado")
+                        .HasDatabaseName("IX_SpedContabilI250_OportunidadeId_CodigoCta_Selecionado");
 
                     b.ToTable("SpedContabilI250");
                 });
@@ -1629,17 +1527,6 @@ namespace IntaxExterno.Infra.Data.Migrations
                         .WithMany()
                         .HasForeignKey("OportunidadeId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Oportunidade");
-                });
-
-            modelBuilder.Entity("IntaxExterno.Domain.Entities.SpedContabilI155", b =>
-                {
-                    b.HasOne("IntaxExterno.Domain.Entities.Oportunidade", "Oportunidade")
-                        .WithMany()
-                        .HasForeignKey("OportunidadeId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Oportunidade");

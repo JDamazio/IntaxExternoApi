@@ -22,6 +22,10 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<ExclusaoIcmsResultado> ExclusaoIcmsResultados { get; set; }
     public DbSet<SpedContribuicoes> SpedContribuicoes { get; set; }
     public DbSet<SpedFiscal> SpedFiscais { get; set; }
+    public DbSet<InsumosResultado> InsumosResultados { get; set; }
+    public DbSet<SpedContabilI050> SpedContabilI050 { get; set; }
+    public DbSet<SpedContabilI155> SpedContabilI155 { get; set; }
+    public DbSet<SpedContabilI250> SpedContabilI250 { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

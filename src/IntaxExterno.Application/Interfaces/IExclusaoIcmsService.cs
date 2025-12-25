@@ -7,4 +7,5 @@ public interface IExclusaoIcmsService
 {
     Task<Response<List<ExclusaoIcmsResultadoDto>>> CalcularExclusaoAsync(CalcularExclusaoRequestDto request);
     Task<Response<List<ExclusaoIcmsResultadoDto>>> GetResultadoAsync(int oportunidadeId);
+    Task<Response<CalcularExclusaoRequestDto>> GetDadosEntradaAsync(int oportunidadeId);
 }
